@@ -1,6 +1,6 @@
 openapi: "3.0.1"
 info:
-  version: 1.3.0
+  version: 1.3.1
   title: Messages API
   description: 'The Messages API consolidates and normalises exchanges across all messaging channels. It allows you to use a single API to interact with our various channels such as SMS, MMS, WhatsApp, Viber and Facebook Messenger'
   contact:
@@ -140,6 +140,13 @@ paths:
                           text:
                             description: |
                                 The text of message to send; limited to 4096 characters, including unicode.
+                      - $ref: '#/components/schemas/channelOptionsWhatsapp'
+                    - allOf:
+                      - $ref: '#/components/schemas/Location'
+                      - properties:
+                          text:
+                            description: |
+                                The location to be sent in the message.
                       - $ref: '#/components/schemas/channelOptionsWhatsapp'
                     - allOf:
                       - $ref: '#/components/schemas/Image'
@@ -504,6 +511,9 @@ x-webhooks:
                                   maxLength: 2000
                       - allOf:
                         - $ref: "#/components/schemas/inboundWhatsAppMessageCommon"
+                        - $ref: "#/components/schemas/Location"                      
+                      - allOf:
+                        - $ref: "#/components/schemas/inboundWhatsAppMessageCommon"
                         - $ref: "#/components/schemas/Reply"
                       - allOf:
                         - $ref: "#/components/schemas/inboundWhatsAppMessageCommon"
@@ -793,6 +803,44 @@ components:
                   type: string
                   example: "Select 9am appointmaent time"
                   description: A description that may be added to the interactive options presented (available only on interactive lists).
+    
+    Location:
+      allOf:
+        - $ref: "#/components/schemas/baseMessageType"
+        - title: Location
+          x-tab-id: Location
+          type: object
+          required:
+            - location
+          properties:
+            message_type:
+              type: string
+              enum:
+                - location
+              example: location
+              description: The type of message to send. You must provide `location` in this field
+            location:
+              required:
+                - lat
+                - long
+              type: object
+              properties:
+                lat:
+                  type: number
+                  example: 40.34772
+                  description: Latitude of the location.
+                long:
+                  type: number
+                  example: -74.18847
+                  description: Longitude of the location.
+                name:
+                  type: string
+                  example: "Vonage"
+                  description: Name of the location.
+                address:
+                  type: string
+                  example: "23 Main St, Holmdel, NJ 07733, USA"
+                  description: Address of the location. Only displayed if `name` is present.
     Order:
       allOf:
         - $ref: "#/components/schemas/baseMessageType"
@@ -804,7 +852,7 @@ components:
           properties:
             message_type:
               type: string
-              enum:
+              enum:   
                 - order
               example: order
               description: The type of message to send.
