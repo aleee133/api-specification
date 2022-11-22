@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   title: Vonage Verify API (v2) - Early Access
-  version: 0.0.14
+  version: 0.0.15
   description: Verify API provides a choice of routes for sending a code to a user. You can use this to confirm a user's contact information, as a second factor when authenticating users, or for step-up authentication.
   contact:
     name: Vonage DevRel
@@ -12,18 +12,26 @@ servers:
 security:
   - basicAuth: []
   - bearerAuth: []
-tags:
-  - name: Requests
-    description: Verify Requests
 
 paths:
   /:
     post:
       operationId: newRequest
       summary: Request a verification be sent to a user
-      description: Start verifying that we can reach this user given a set of contact details
-      tags:
-        - Requests
+      description: >-
+        Start verifying that we can reach this user given a set of contact details
+
+        <div class="Vlt-callout Vlt-callout--critical">
+          <div class="Vlt-callout__content">
+            <h4>Note on Email & WhatsApp</h4>
+            If you wish to use your own WhatsApp Business Account, or your own email address when using the `email`
+            channel in the 'from' field, please note the following:
+              <ul>
+                <li><strong>&nbsp;&nbsp;• Testing for these channels is self-service.</strong></li>
+                <li><strong>&nbsp;&nbsp;• Customers will need to get in touch if they want to configure / customize these channels.</strong></li>
+              </ul>
+          </div>
+        </div>
       requestBody:
         $ref: '#/components/requestBodies/NewVerificationRequest'
       responses:
@@ -78,8 +86,6 @@ paths:
       operationId: checkCode
       summary: Check a supplied code against a request to see if it is valid
       description: Allows a code to be checked against an existing Verification request
-      tags:
-        - Requests
       requestBody:
         $ref: '#/components/requestBodies/CheckCodeRequest'
 
