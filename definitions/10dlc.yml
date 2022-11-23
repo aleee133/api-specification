@@ -1,7 +1,7 @@
 openapi: 3.0.3
 
 info:
-  version: 1.0.16
+  version: 1.0.17
   title: 10DLC Brand and Campaign Provisioning
   contact:
     name: Vonage
@@ -545,6 +545,20 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/VettingProviders"
+  /enum:
+    get:
+      tags:
+        - Enums
+      summary: Get enumeration values
+      description: Get the list of all enum values available for each enum parameter
+      operationId: getEnumValues
+      responses:
+        '200':
+          $ref: "#/components/responses/EnumResponse"
+        '400':
+          $ref: '#/components/responses/ErrorGeneric'
+        '401':
+          $ref: 'common/common_errors.yml#/components/responses/BadCredentialsError'
 components:
   examples:
     BrandNexmo:
@@ -1416,6 +1430,22 @@ components:
                 vetting_instruction:
                   type: string
 
+    EnumResponse:
+      description: List of all enumeration values
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              entity_type:
+                type: array
+                items:
+                 type: object
+                 properties:
+                  id:
+                    type: string
+                    example:  "GOVERNMENT"
+
     VettingRequest:
       description: Information about a vetting request
       content:
@@ -1439,7 +1469,7 @@ components:
         application/json:
           schema:
             description: >-
-              ID of MNO. Please refer to the /enum endpoint for an
+              ID of MNO. Please refer to the [/enum](#enums) endpoint for an
               updated list of valid values.
             type: object
             required:
@@ -1588,7 +1618,7 @@ components:
       maxLength: 50
     SharingStatus:
       description: >-
-        Sharing Status. Please refer to the /enum endpoint for an update list of
+        Sharing Status. Please refer to the [/enum](#enums) endpoint for an update list of
         valid values.
       type: string
       maxLength: 50
@@ -1598,7 +1628,7 @@ components:
         - DECLINED
     CnpID:
       description: >-
-        CNP ID. Please refer to the /enum endpoint for an update list of valid
+        CNP ID. Please refer to the [/enum](#enums) endpoint for an update list of valid
         values.
       type: string
       maxLength: 50
@@ -1836,7 +1866,7 @@ components:
           description: |
             Entity type behind the brand.
             This is the form of business establishment.
-            Please refer to the /enum endpoint for an update list of valid values.
+            Please refer to the [/enum](#enums) endpoint for an update list of valid values.
           example:
             $ref: "#/components/examples/BrandVonage/value/entity_type"
         website:
@@ -2957,6 +2987,8 @@ tags:
     description: APIs relating to working with Campaigns
   - name: Numbers
     description: APIs relating to working with Numbers in Campaigns
+  - name: Enums
+    description: The list of values available for enum properties across all APIs
 
 x-errors:
   brand-conflict:
