@@ -46,6 +46,12 @@ paths:
                 properties:
                   request_id:
                     $ref: '#/components/schemas/RequestId'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConflictRequest'
         "422":
           description: Invalid parameters
           content:
@@ -109,7 +115,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorConflictRequest"
+                $ref: "#/components/schemas/ErrorConflictCheckRequest"
         "410":
           description: "Invalid Code"
           content:
@@ -269,11 +275,6 @@ components:
             - brand
           description: Request a code be sent to a user
           properties:
-            app_hash:
-              type: string
-              description: Optional Android Application Hash Key for automatic code detection on a user's device. 
-              minimum: 11
-              maximum: 11
             workflow:
               type: array
               items:
@@ -290,10 +291,16 @@ components:
                     example: "sms"
                   to:
                     $ref: '#/components/schemas/To'
+                  app_hash:
+                    type: string
+                    description: Optional Android Application Hash Key for automatic code detection on a user's device.
+                    minimum: 11
+                    maximum: 11
               example: [
                 {
                   "channel": "sms",
-                  "to": "447700900000"
+                  "to": "447700900000",
+                  "app_hash": "738f9313-418a"
                 }
               ]
     
@@ -776,6 +783,25 @@ components:
           description: The instance ID
 
     ErrorConflictRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Conflict"
+          description: Error description
+        detail:
+          type: string
+          example: "Concurrent verifications to the same number are not allowed."
+          description: Detailed error description
+        instance:
+          type: string
+          example: "738f9313-418a-4259-9b0d-6670f06fa82d"
+          description: The instance ID
+        request_id:
+          type: string
+          example: "575a2054-aaaf-4405-994e-290be7b9a91f"
+
+    ErrorConflictCheckRequest:
       type: object
       properties:
         title:
