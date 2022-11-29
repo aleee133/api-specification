@@ -1,7 +1,7 @@
 ---
 openapi: "3.0.0"
 info:
-  version: 2.1.3
+  version: 2.1.4
   title: "Application API"
   description: |
     Vonage provides an Application API to allow management of your Vonage Applications.
@@ -447,11 +447,13 @@ components:
       properties:
         signed_callbacks:
           type: boolean
+          example: true
         leg_persistence_time:
           maximum: 31
           minimum: 1
           type: integer
           format: int32
+          example: 5
         webhooks:
           type: object
           properties:
@@ -477,9 +479,11 @@ components:
         signed_callbacks:
           type: boolean
           description: "verify that a request is coming from Vonage servers (a jwt token will be sent on the callback authorization header)"
+          example: true
         conversation_ttl:
           type: integer
           description: "ttl used by the NCCO in case you’re using a conversation action (is set in hours and is 48 by default)"
+          example: 30
         payments:
           type: object
           description: "encompass all the payment related fields"
@@ -493,12 +497,15 @@ components:
                   type:
                     type: string
                     description: "payment gateway type (Stripe, Azure)"
+                    example: Stripe
                   credential:
                     type: string
                     description: "used to identify the gateway in the credentials service"
+                    example: 26f2a89e-6fcd-11ed-a1eb-0242ac120002
                   mode:
                     type: string
                     description: "determines if the user has completed the integration with the gateway"
+                    example: live
                     enum:
                       - test
                       - live
