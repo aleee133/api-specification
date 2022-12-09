@@ -3,7 +3,7 @@ servers:
   - url: "https://api.nexmo.com/verify"
 info:
   title: Verify API
-  version: 1.2.3
+  version: 1.2.4
   description: >-
     The Verify API helps you to implement 2FA (two-factor authentication) in your applications.
     This is useful for:
@@ -785,6 +785,12 @@ components:
             - 6
             - 7
           example: 4
+        pin_code:
+          type: string
+          minimum: 4
+          maximum: 10
+          description: A custom PIN to send to the user. If a PIN is not provided, Verify will generate a random PIN for you. <b>This feature is not enabled by default</b> - please discuss with your Account Manager if you would like it enabled. If this feature is not enabled on your account, error status `20` will be returned.
+          example: "AKFG-3424"
 
     requestResponse:
       type: object
