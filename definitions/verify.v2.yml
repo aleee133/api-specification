@@ -1,14 +1,14 @@
 openapi: 3.0.2
 info:
   title: Vonage Verify API (v2) - Early Access
-  version: 0.0.15
+  version: 0.0.16
   description: Verify API provides a choice of routes for sending a code to a user. You can use this to confirm a user's contact information, as a second factor when authenticating users, or for step-up authentication.
   contact:
     name: Vonage DevRel
     email: devrel@vonage.ctom
     url: 'https://developer.vonage.com/'
 servers:
-  - url: https://api.nexmo.com/v2/verify
+  - url: https://api.vonage.com/v2/verify
 security:
   - basicAuth: []
   - bearerAuth: []
@@ -68,25 +68,6 @@ paths:
   /{request_id}:
     parameters:
       - $ref: '#/components/parameters/request_id'
-  #   get:
-  #     operationId: RequestStatus
-  #     summary: Fetch full information about a specific request by ID
-  #     description: >-
-  #       <p style="font-weight:bold; color: red;">To be implemented.</p>
-  #       Returns detailed information about the original request, its current status, and any events that have already taken place.
-  #     responses:
-  #       "200":
-  #         description: Good
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/VerifyResource'
-        # "404":
-        #   description: "No such request"
-        #   content:
-        #     application/json:
-        #       schema:
-        #         $ref: "#/components/schemas/ErrorInvalidRequest"
 
     post:
       operationId: checkCode
@@ -129,34 +110,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorThrottled"
 
-    # delete:
-    #   operationId: CancelRequest
-    #   summary: Cancel an in-progress verify request
-    #   description: >-
-    #     <p style="font-weight:bold; color: red;">To be implemented.</p>
-    #     Stops any events yet to occur in a verify request workflow, and ends the request.
-    #   responses:
-    #     "204":
-    #       description: No content
-    #     "404":
-    #       description: "No such request"
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/ErrorInvalidRequest"
-    #     "409":
-    #       description: "Expired request"
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/ErrorExpiredRequest"
-    #     "429":
-    #       description: "Rate Limited"
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/ErrorThrottled"
-
 x-webhooks:
   request-status-update:
     '{$request.body#/callback}':
@@ -171,6 +124,7 @@ x-webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/VerifyResource'
+
   events:
     '{$request.body#/callback}':
       post:
@@ -184,6 +138,20 @@ x-webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/VerifyResourceWhatsappInteractive'
+
+  silent-auth-callback:
+    '{$request.body#/callback}':
+      post:
+        summary: Silent Auth Request Update
+        operationId: silent-auth-update
+        x-example-path: '/webhooks/request-status-update'
+        description: An inbound request update for a silent authentication workflow.
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifySilentAuth'
 
 components:
   requestBodies:
@@ -205,15 +173,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/NewCodeRequest'
-            # oneOf:
-            #   - title: Code Verification
-            #     x-tab-id: CodeVerificiation
-            #     allOf:
-            #       - $ref: '#/components/schemas/NewCodeRequest'
-            #   - title: PSD2 Verification
-            #     x-tab-id: PSD2Verification
-            #     allOf:
-            #       - $ref: '#/components/schemas/NewPSD2Request'
+
   parameters:
     request_id:
       name: request_id
@@ -235,14 +195,6 @@ components:
     NewRequestBase:
       type: object
       properties:
-        # to:
-        #   type: array
-        #   items:
-        #     $ref: '#/components/schemas/To'
-        # sender:
-        #   $ref: '#/components/schemas/Sender'
-        # country:
-        #   $ref: '#/components/schemas/Country'
         brand:
           $ref: '#/components/schemas/Brand'
         locale:
@@ -253,8 +205,6 @@ components:
           $ref: '#/components/schemas/ClientRef'
         code_length:
           $ref: '#/components/schemas/CodeLength'
-        # code_expiry:
-        #   $ref: '#/components/schemas/CodeExpiry'
 
     NewCodeRequest:
       oneOf:
@@ -263,6 +213,7 @@ components:
         - $ref: '#/components/schemas/NewCodeRequestWorkflowWhatsAppInteractive'
         - $ref: '#/components/schemas/NewCodeRequestWorkflowVoice'
         - $ref: '#/components/schemas/NewCodeRequestWorkflowEmail'
+        - $ref: '#/components/schemas/NewCodeRequestWorkflowSilentAuth'
 
     NewCodeRequestWorkflowSMS:
       title: SMS
@@ -444,6 +395,39 @@ components:
           required:
             - workflow
 
+    NewCodeRequestWorkflowSilentAuth:
+      title: Silent Auth
+      x-tab-id: WorkflowSilentAuth
+      allOf:
+        - type: object
+          description: Request a code be sent to a user
+          properties:
+            workflow:
+              type: array
+              items:
+                type: object
+                properties:
+                  channel:
+                    type: string
+                    description: "The channel"
+                    enum:
+                      - silent_auth
+                    example: silent_auth
+                  to:
+                    $ref: '#/components/schemas/ToSilentAuth'
+                required:
+                  - channel
+                  - to
+              example: [
+                {
+                  "channel": "silent_auth",
+                  "to": "447700900000"
+                }
+              ]
+          required:
+            - workflow
+            - brand
+
     NewPSD2Request:
       allOf:
         - $ref: '#/components/schemas/NewRequestBase'
@@ -500,6 +484,13 @@ components:
       example: '447700900000'
       description: The phone number to contact, in the [E.164](https://en.wikipedia.org/wiki/E.164) format. Don't use a leading + or 00 when entering a phone number, start with the country code, for example, 447700900000.
 
+    ToSilentAuth:
+      type: string
+      minLength: 1
+      maxLength: 50
+      example: '447700900000'
+      description: The phone number to use for authentication, in the [E.164](https://en.wikipedia.org/wiki/E.164) format. Don't use a leading + or 00 when entering a phone number, start with the country code, for example, 447700900000.
+
     From:
       type: string
       minLength: 1
@@ -547,6 +538,17 @@ components:
       type: string
       description: 'The ID of the request'
       example: 'c11236f4-00bf-4b89-84ba-88b25df97315'
+
+    TriggeredAt:
+      type: string
+      description: >-
+        The date and time the verification request was triggered, in ISO 8601 format.
+      example: "2020-01-01T14:00:00.000Z"
+
+    Type:
+      type: string
+      description: Type of response
+      example: "event"
 
     VerifyResource:
       required:
@@ -667,6 +669,54 @@ components:
         #         description: The date and time that the event was started, in ISO 8601 format.
         #         example: "2020-01-01T14:00:00.000Z"
 
+    VerifySilentAuth:
+      required:
+        - request_id
+        - triggered_at
+        - type
+        - channel
+        - status
+      properties:
+        request_id:
+          $ref: '#/components/schemas/RequestId'
+        triggered_at:
+          $ref: '#/components/schemas/TriggeredAt'
+        type:
+          $ref: '#/components/schemas/Type'
+        channel:
+          type: string
+          enum:
+            - silent_auth
+        status:
+          type: string
+          description: Current status of this request
+          example: action_pending
+          enum:
+            - action_pending
+            - failed
+            - completed
+            - user_rejected
+        action:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                description: "Description of workflow event"
+                enum:
+                  - check
+              check_url:
+                type: string
+                description: URL for Silent Auth Verify workflow completion
+                example: https://eu.api.silent.auth/phone_check/v0.1/checks/:request_id/redirect
+          example: [
+            {
+              "type": "check",
+              "check_url": "https://eu.api.silent.auth/phone_check/v0.1/checks/:request_id/redirect"
+            },
+          ]
+
     VerifyResourceWhatsappInteractive:
       required:
         - request_id
@@ -680,14 +730,9 @@ components:
         request_id:
           $ref: '#/components/schemas/RequestId'
         triggered_at:
-          type: string
-          description: >-
-            The date and time the verification request was triggered, in ISO 8601 format.
-          example: "2020-01-01T14:00:00.000Z"
+          $ref: '#/components/schemas/TriggeredAt'
         type:
-          type: string
-          description: Type of response
-          example: "event"
+          $ref: '#/components/schemas/Type'
         channel: 
           type: string
           description: The channel
@@ -744,7 +789,7 @@ components:
         invalid-parameters:
           title: 'Missing `workflow` parameter'
           detail: 'The `workflow` parameter is required and must be an array'
-          instance: abcd
+          instance: bf0ca0bf927b3b52e3cb03217e1a1ddf
 
     ErrorInvalidCodeRequest:
       type: object
@@ -753,33 +798,37 @@ components:
           type: string
           example: "Invalid Code"
           description: Error description
+        type:
+          type: string
+          description: URL link to the error code reference
+          example: "https://www.developer.vonage.com/api-errors/verify#invalid-code"
         detail:
           type: string
           example: "The code you provided does not match the expected value."
           description: Detailed error description
         instance:
           type: string
-          example: "xxx"
+          example: "bf0ca0bf927b3b52e3cb03217e1a1ddf"
           description: The instance ID
 
     ErrorInvalidRequest:
       type: object
       properties:
-        type:
-          type: string
-          example: "https://developer.vonage.com/api-errors#not-found"
-          description: URL link to the error code reference
         title:
           type: string
           example: "Not Found"
           description: Error description
+        type:
+          type: string
+          example: "https://developer.vonage.com/api-errors#not-found"
+          description: URL link to the error code reference
         detail:
           type: string
           example: "Request <id> was not found or it has been verified already."
           description: Detailed error description
         instance:
           type: string
-          example: "xxx"
+          example: "bf0ca0bf927b3b52e3cb03217e1a1ddf"
           description: The instance ID
 
     ErrorConflictRequest:
@@ -789,6 +838,10 @@ components:
           type: string
           example: "Conflict"
           description: Error description
+        type:
+          type: string
+          description: URL link to the error code reference
+          example: "https://www.developer.vonage.com/api-errors/verify#conflict"
         detail:
           type: string
           example: "Concurrent verifications to the same number are not allowed."
@@ -814,7 +867,7 @@ components:
           description: Detailed error description
         instance:
           type: string
-          example: "xxx"
+          example: "bf0ca0bf927b3b52e3cb03217e1a1ddf"
           description: The instance ID
 
     ErrorExpiredRequest:
@@ -824,13 +877,17 @@ components:
           type: string
           example: "Invalid Code"
           description: Error description
+        type:
+          type: string
+          description: URL link to the error code reference
+          example: "https://www.developer.vonage.com/api-errors/verify#expired"
         detail:
           type: string
           example: "An incorrect code has been provided too many times. Workflow terminated."
           description: Detailed error description
         instance:
           type: string
-          example: "xxx"
+          example: "bf0ca0bf927b3b52e3cb03217e1a1ddf"
           description: The instance ID
     
     ErrorInvalidParams:
@@ -840,6 +897,10 @@ components:
           type: string
           description: Error title
           example: Invalid params
+        type:
+          type: string
+          description: Link to documented error type
+          example: "https://www.developer.vonage.com/api-errors#invalid-params"
         detail:
           type: string
           description: More detailed error descriptions
@@ -874,6 +935,10 @@ components:
           type: string
           description: Generic error message
           example: Rate Limit Hit
+        type:
+          type: string
+          description: URL link to the error code reference
+          example: "https://www.developer.vonage.com/api-errors#throttled"
         detail:
           type: string
           description: Additional information about the error
@@ -882,7 +947,6 @@ components:
           type: string
           description: Internal Trace ID
           example: bf0ca0bf927b3b52e3cb03217e1a1ddf
-
 
   securitySchemes:
     basicAuth:
@@ -894,3 +958,11 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+x-errors:
+  expired:
+    description: The request has been expired due to an invalid code being sent too many times
+    resolution: Request a new Verification
+  conflict:
+    description: The workflow provided does not accept a code
+    resolution: Change to a valid workflow to handle your request
