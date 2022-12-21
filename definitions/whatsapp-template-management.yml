@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  version: 1.0.0
+  version: 1.0.1
   title: WhatsApp Template Management API
-  description: 'The Messages API consolidates and normalises exchanges across all messaging channels. It allows you to use a single API to interact with our various channels such as SMS, MMS, WhatsApp, Viber and Facebook Messenger'
+  description: 'The Messages API now offers the WhatsApp Template Management API that allow you to manage templates for your WABAs and cut out the manual step of submitting and checking templates manually. You can manage your templates using the Template Management API, including adding new templates, retrieving their statuses, and deleting any that are already in use. Different sorts of media can be sent with each WhatsApp message template. You can manage your media files via the API and set up extra features to improve their functionality.'
   contact:
     name: Vonage DevRel
     email: devrel@vonage.com
@@ -13,6 +13,8 @@ servers:
 paths:
   '/wabas/{id}/templates':
     get:
+      security:
+        - bearerAuth: []
       summary: List Templates
       operationId: ListTemplates
       responses:
@@ -65,7 +67,7 @@ paths:
                         language:
                           type: string
                           example: en
-                          description: 'The langauge of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/)'
+                          description: 'The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/)'
                         status:
                           type: string
                           description: The status of the template. Templates with a status of `APPROVED` can be used in WhatsApp template messages.
@@ -184,6 +186,8 @@ paths:
         required: true
         description: The id of the WABA
     post:
+      security:
+        - bearerAuth: []
       summary: Create Template
       operationId: CreateTemplate
       responses:
@@ -238,97 +242,13 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: The name of the template
-                  example: sample_issue_resolution
-                language:
-                  type: string
-                  description: 'The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/)'
-                  example: en
-                category:
-                  type: string
-                  description: The required category of the template. The category determines what the template will be used for.
-                  example: TRANSACTIONAL
-                  enum:
-                    - TRANSACTIONAL
-                    - MARKETING
-                    - OTP
-                components:
-                  type: array
-                  description: An array of objects representing the parts of the template itself.
-                  minItems: 0
-                  uniqueItems: false
-                  items:
-                    type: object
-                    minProperties: 0
-                    properties:
-                      type:
-                        type: string
-                        example: BODY
-                        description: The type of template component. `HEADER`, `FOOTER`, and `BUTTONS` are optional, a `BODY` is always a required component of a template.
-                        enum:
-                          - HEADER
-                          - BODY
-                          - FOOTER
-                          - BUTTONS
-                      format:
-                        type: string
-                        description: The format of the template component. Where `type` is `HEADER` can be `TEXT`, `IMAGE`, `DOCUMENT`, or `VIDEO`. Where type is `BODY` or `FOOTER`, must be `TEXT`.
-                        example: TEXT
-                        enum:
-                          - TEXT
-                          - IMAGE
-                          - DOCUMENT
-                          - VIDEO
-                      text:
-                        type: string
-                        description: 'The text to be displayed in this template component. EIther `plain text` or `text with placeholders {{1}}`.'
-                        example: 'Your parcel from {{1}} is due to arrive on {{2}} between {{3}} and {{4}}.'
-                      buttons:
-                        type: array
-                        description: 'Where `type` is set to `BUTTONS`, an array of button objects representing the properties of each button. '
-                        items:
-                          type: object
-                          properties:
-                            type:
-                              type: string
-                              description: The type of button.
-                              example: QUICK_REPLY
-                              enum:
-                                - QUICK_REPLY
-                                - URL
-                                - PHONE_NUMBER
-                            text:
-                              type: string
-                              description: The text to appear on the button.
-                              example: 'Yes'
-                            url:
-                              type: string
-                              format: uri
-                              description: A URL to which the end-user will be directed when hitting the button. Must be set when `type` is `URL`.
-                              example: 'https://example.com/special-offer-opt-in'
-                            phone_number:
-                              type: string
-                              description: Phone number to which a phone call would be placed by the end-user when hitting the button. Must be set when `type` is `PHONE_NUMBER`.
-                              example: '8001111111'
-                  required:
-                    - type
-                    - format
-              required:
-                - name
-                - language
-                - category
-                - components
-            examples: {}
-          application/xml:
-            schema:
-              type: object
-              properties: {}
-        description: ''
+              oneOf:
+                - $ref: '#/components/schemas/CreateTextTemplate'
+                - $ref: '#/components/schemas/CreateMediaTemplate'
+                    
     delete:
+      security:
+        - bearerAuth: []
       summary: Delete Template
       operationId: DeleteTemplate
       responses:
@@ -368,6 +288,8 @@ paths:
           required: true
   /media/uploads:
     post:
+      security:
+        - bearerAuth: []
       summary: Media Upload
       operationId: MediaUpload
       responses:
@@ -429,13 +351,188 @@ paths:
                   description: The file to be uploaded.
 components:
   securitySchemes:
-    basicAuth:
-      type: http
-      scheme: basic
     bearerAuth:
       type: http
       scheme: bearer
+      bearerFormat: JWT
   schemas:
+    CreateTextTemplate:
+      title: Create Text Template
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the template
+          example: sample_issue_resolution
+        language:
+          type: string
+          description: 'The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/). Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)'
+          example: en
+        category:
+          type: string
+          description: 'The required category of the template. The category determines what the template will be used for. Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)'
+          example: TRANSACTIONAL
+          enum:
+            - TRANSACTIONAL
+            - MARKETING
+            - OTP
+        components:
+          type: array
+          description: An array of objects representing the parts of the template itself.
+          minItems: 0
+          uniqueItems: false
+          items:
+            type: object
+            minProperties: 0
+            properties:
+              type:
+                type: string
+                example: BODY
+                description: The type of template component. `HEADER`, `FOOTER`, and `BUTTONS` are optional, a `BODY` is always a required component of a template.
+                enum:
+                  - HEADER
+                  - BODY
+                  - FOOTER
+                  - BUTTONS
+              format:
+                type: string
+                description: The format of the template component. For a Text Template, `format` is always `TEXT` for `HEADER`, `BODY` or `FOOTER` components.
+                example: TEXT
+                enum:
+                  - TEXT
+              text:
+                type: string
+                description: 'The text to be displayed in this template component. EIther `plain text` or `text with placeholders {{1}}`.'
+                example: 'Your parcel from {{1}} is due to arrive on {{2}} between {{3}} and {{4}}.'
+              buttons:
+                type: array
+                description: 'Where `type` is set to `BUTTONS`, an array of button objects representing the properties of each button. '
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      description: The type of button.
+                      example: QUICK_REPLY
+                      enum:
+                        - QUICK_REPLY
+                        - URL
+                        - PHONE_NUMBER
+                    text:
+                      type: string
+                      description: The text to appear on the button.
+                      example: 'Yes'
+                    url:
+                      type: string
+                      format: uri
+                      description: A URL to which the end-user will be directed when hitting the button. Must be set when `type` is `URL`.
+                      example: 'https://example.com/special-offer-opt-in'
+                    phone_number:
+                      type: string
+                      description: Phone number to which a phone call would be placed by the end-user when hitting the button. Must be set when `type` is `PHONE_NUMBER`.
+                      example: '8001111111'
+          required:
+            - type
+            - format
+      required:
+        - name
+        - language
+        - category
+        - components
+
+    CreateMediaTemplate:
+      title: Create Media Template
+      properties:
+        name:
+          type: string
+          description: The name of the template
+          example: sample_issue_resolution
+        language:
+          type: string
+          description: 'The language of the template. The same template name can be used for multiple language versions. A list of supported languages is available in the [WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/messages/message-templates/). Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)'
+          example: en
+        category:
+          type: string
+          description: 'The required category of the template. The category determines what the template will be used for. Note: Adding new languages on *legacy* template categories has been disabled by Meta, see the documentation for [Language Variants](/messages/whatsapp-template-management/overview#language-variants) and [Categories](/messages/whatsapp-template-management/overview#template-categories)'
+          example: TRANSACTIONAL
+          enum:
+            - TRANSACTIONAL
+            - MARKETING
+            - OTP
+        components:
+          type: array
+          description: An array of objects representing the parts of the template itself.
+          minItems: 0
+          uniqueItems: false
+          items:
+            type: object
+            minProperties: 0
+            properties:
+              type:
+                type: string
+                example: HEADER
+                description: The type of template component. `HEADER`, `FOOTER`, and `BUTTONS` are optional, a `BODY` is always a required component of a template.
+                enum:
+                  - HEADER
+                  - BODY
+                  - FOOTER
+                  - BUTTONS
+              format:
+                type: string
+                description: The format of the template component. Where `type` is `HEADER` can be `TEXT`, `IMAGE`, `DOCUMENT`, or `VIDEO`. Where type is `BODY` or `FOOTER`, must be `TEXT`.
+                example: IMAGE
+                enum:
+                  - TEXT
+                  - IMAGE
+                  - DOCUMENT
+                  - VIDEO
+              text:
+                type: string
+                description: 'The text to be displayed in this template component. EIther `plain text` or `text with placeholders {{1}}`.'
+              example:
+                type: object
+                description: 'Must be included when the `type` is `HEADER` and `format` is one of `IMAGE`, `DOCUMENT`, or `VIDEO`. Not allowed for other component types.'
+                properties:
+                  header_handle:
+                    type: string
+                    description: The identifier or 'handle' of a file received in the response to a Media Upload.
+                    example: "h:3:MjAyMi0wOC0wNCUyMDExXzE0XzQ0Ljc0Mjk0NV9XaGF0c0FwcCUyMEltYWdlJTIwMjAyMi0wOC0wNCUyMGF0JTIwMTEuMDcuMzclMjBBTS5qcGVn:aW1hZ2UvanBlZw==:ARZBgKmPpdCDKM9p8VulwOuNGrHg5RZYIrvwYWpn5YgJezdnoufigT9OTwtRYfAhP4EbpvJik7GZv5QGT7cU7k1Fqu3fnDxEe5XkdIypjSgngQ:e:1662475718:ARauPjU_zJe83Ukp5pY"
+              buttons:
+                type: array
+                description: 'Where `type` is set to `BUTTONS`, an array of button objects representing the properties of each button. '
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      description: The type of button.
+                      example: QUICK_REPLY
+                      enum:
+                        - QUICK_REPLY
+                        - URL
+                        - PHONE_NUMBER
+                    text:
+                      type: string
+                      description: The text to appear on the button.
+                      example: 'Yes'
+                    url:
+                      type: string
+                      format: uri
+                      description: A URL to which the end-user will be directed when hitting the button. Must be set when `type` is `URL`.
+                      example: 'https://example.com/special-offer-opt-in'
+                    phone_number:
+                      type: string
+                      description: Phone number to which a phone call would be placed by the end-user when hitting the button. Must be set when `type` is `PHONE_NUMBER`.
+                      example: '8001111111'
+          required:
+            - type
+            - format
+      required:
+        - name
+        - language
+        - category
+        - components
+
     TemplateComponentStandard:
       title: TemplateComponentStandard
       type: object
@@ -562,6 +659,10 @@ components:
     ErrorResponse422:
       type: object
       properties:
+        type:
+          type: string
+          description: URL for the documentation regarding the error.
+          example: 'https://developer.nexmo.com/api-errors#invalid-json'
         title:
           type: string
           description: The title of the error.
@@ -582,15 +683,15 @@ components:
         type:
           type: string
           description: URL for the documentation regarding the error.
-          example: ''
+          example: 'https://developer.nexmo.com/api-errors/messages-olympus#1000'
         title:
           type: string
           description: The title of the error.
-          example: ''
+          example: Rate Limit Hit
         detail:
           type: string
           description: A description of the error.
-          example: ''
+          example: Please wait, then retry your request
         instance_id:
           type: string
           description: The instance ID for the request that generated the error.
@@ -603,15 +704,15 @@ components:
         type:
           type: string
           description: URL for the documentation regarding the error.
-          example: ''
+          example: 'https://developer.vonage.com/api-errors/messages-olympus#1030'
         title:
           type: string
           description: The title of the error.
-          example: ''
+          example: Internal error
         detail:
           type: string
           description: A description of the error.
-          example: ''
+          example: 'There was an error processing your request in the Platform.'
         instance_id:
           type: string
           description: The instance ID for the request that generated the error.
@@ -619,7 +720,11 @@ components:
       description: Response body for 500 error responses
       title: 500ErrorResponse
 
-
+x-errors:
+  "1000":
+    description: Throttled - You have exceeded the submission capacity allowed on this account. Please wait and retry
+  "1030":
+    description: Internal error  -  There was an error processing your request in the Platform.
 
 
 
