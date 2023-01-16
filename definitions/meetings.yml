@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Vonage Meetings Public API
-  version: 0.1.6
+  version: 0.1.7
 servers:
   - url: https://api-eu.vonage.com/beta/meetings
 paths:
@@ -576,11 +576,11 @@ x-webhooks:
         responses:
           '204':
             description: Your server returns this code if it accepts the callback
-    recording-ready:
+    recording-uploaded:
       post:
-        summary: Recording Ready Callback
-        operationId: recording-ready
-        description: A notification about recording ready to be downloaded
+        summary: Recording Uploaded Callback
+        operationId: recording-uploaded
+        description: A notification about recording that was uploaded and is ready to be downloaded.
         requestBody:
           required: true
           content:
@@ -590,7 +590,7 @@ x-webhooks:
                   event:
                     type: string
                     enum:
-                      - 'recording:ready'
+                      - 'recording:uploaded'
                   recording_id:
                     type: string
                     format: uuid
@@ -1060,7 +1060,7 @@ components:
       properties:
         microphone_state:
           type: string
-          enum: [ on, off, default ]
+          enum: [ 'on', 'off', default ]
           default: default
           description: Set the default microphone option for users in the pre-join screen of this room.
           example: default
