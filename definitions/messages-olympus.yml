@@ -1,6 +1,6 @@
 openapi: "3.0.1"
 info:
-  version: 1.3.2
+  version: 1.4.0
   title: Messages API
   description: 'The Messages API consolidates and normalises exchanges across all messaging channels. It allows you to use a single API to interact with our various channels such as SMS, MMS, WhatsApp, Viber and Facebook Messenger'
   contact:
@@ -314,7 +314,7 @@ paths:
                           text:
                             description: |
                               The text of message to send; limited to 1000 characters, including unicode.
-                      - $ref: '#/components/schemas/channelOptionsViber'
+                      - $ref: '#/components/schemas/channelOptionsViberWithButton'
                     - allOf:
                       - $ref: '#/components/schemas/Image'
                       - properties:
@@ -327,6 +327,50 @@ paths:
 
                                   Supports `.jpg`, `.jpeg`, and `.png`.
                                 example: 'https://example.com/image.jpg'
+                              caption:
+                                type: string
+                                description: A caption to accompany the image. Required if the message includes an action button.
+                                example: Check out this new promotion
+                      - $ref: '#/components/schemas/channelOptionsViberWithButton'
+                    - allOf:
+                      - $ref: '#/components/schemas/Video'
+                      - properties:
+                          video:
+                            properties:
+                              url:
+                                type: string
+                                description: The URL of the video attachment.
+                                example: 'https://example.com/image.jpg'
+                              caption:
+                                type: string
+                                description: Text caption to accompany message.
+                                example: Check out this new video
+                              thumb_url:
+                                type: string
+                                maxLength: 1000
+                                description: URL to an image file for a thumbnail preview of the video.
+                                example: https://example.com/file1.jpg
+                            required:
+                              - url
+                              - duration
+                              - file_size
+                              - thumb_url
+                      - $ref: '#/components/schemas/channelOptionsViberVideo'
+                    - allOf:
+                      - $ref: '#/components/schemas/File'
+                      - properties:
+                          file:
+                            description: 'An object containing details of the file to be sent. Note: allowed file types are `.doc,` `.docx`, `.rtf`, `.dot`, `.dotx`, `.odt`, `.odf`, `.fodt`, `.txt`, `.info`, `.pdf`, `.xps`, `.pdax`, `.eps`, `.xls`, `.xlsx`, `.ods`, `.fods`, `.csv`, `.xlsm`, `.xltx`. Maximum file size is 200MB'
+                            properties:
+                              url:
+                                type: string
+                                description: The URL for the file attachment *or* the path for the location of the file attachement. If `name` is included, can just be the path. If  `name` is not included, must include the filename and extension.
+                                example: 'https://example.com/files/'
+                              name:
+                                type: string
+                                maxLength: 25
+                                description: The name and extension of the file.
+                                example: 'example.pdf'
                       - $ref: '#/components/schemas/channelOptionsViber'
       responses:
         '202':
@@ -455,6 +499,15 @@ x-webhooks:
                     oneOf:
                       - allOf:
                         - $ref: '#/components/schemas/inboundMessageMMS'
+                        - $ref: '#/components/schemas/Text'
+                        - properties:
+                            text:
+                              type: string
+                              description: The text in the inbound message.
+                              maxLength: 640
+                              example: This is sample text.
+                      - allOf:
+                        - $ref: '#/components/schemas/inboundMessageMMS'
                         - $ref: '#/components/schemas/Image'
                       - allOf:
                         - $ref: '#/components/schemas/inboundMessageMMS'
@@ -559,6 +612,12 @@ x-webhooks:
                       - allOf:
                         - $ref: "#/components/schemas/InboundViberMessageCommon"
                         - $ref: "#/components/schemas/Image"
+                      - allOf:
+                        - $ref: "#/components/schemas/InboundViberMessageCommon"
+                        - $ref: "#/components/schemas/Video"
+                      - allOf:
+                        - $ref: "#/components/schemas/InboundViberMessageCommon"
+                        - $ref: "#/components/schemas/File"
 
         responses:
             '200':
@@ -1312,7 +1371,7 @@ components:
       properties:
         client_ref:
           type: string
-          description: Client reference of up to 40 characters. The reference will be present in every message status.
+          description: Client reference of up to 100 characters. The reference will be present in every message status.
     channelOptionsSms:
       type: object
       properties:
@@ -1398,6 +1457,93 @@ components:
             type:
               description: Viber-specific type definition. To use "template", please contact your Vonage Account Manager to setup your templates. To find out more please visit the [product page](https://www.vonage.com/communications-apis/messages/)
               type: string
+    channelOptionsViberVideo:
+      type: object
+      properties:
+        to:
+          $ref: "#/components/schemas/ToNumber"
+        from:
+          $ref: "#/components/schemas/FromId"
+        channel:
+          description: The channel to send to. You must provide `viber_service` in this field
+          type: string
+          example: viber_service
+          enum:
+            - viber_service
+        viber_service:
+          type: object
+          properties:
+            category:
+              type: string
+              description: The use of different category tags enables the business to send messages for different use cases. For Viber Business Messages the first message sent from a business to a user must be personal, informative & a targeted message - not promotional. By default Vonage sends the `transaction` category to Viber Business Messages.
+              enum:
+                - transaction
+                - promotion
+            duration:
+              type: string
+              minimum: 1
+              maximum: 600
+              description: The duration of the video in seconds.
+              example: '123'
+            file_size:
+              type: string
+              minimum: 1
+              maximum: 200
+              description: The file size of the video in MB.
+              example: '1'
+            ttl:
+              minimum: 30
+              maximum: 259200
+              description: Set the time-to-live of message to be delivered in seconds. i.e. if the message is not delivered in 600 seconds then delete the message.
+              example: 600
+              type: integer
+            type:
+              description: Viber-specific type definition. To use "template", please contact your Vonage Account Manager to setup your templates. To find out more please visit the [product page](https://www.vonage.com/communications-apis/messages/)
+              type: string
+    channelOptionsViberWithButton:
+      type: object
+      properties:
+        to:
+          $ref: "#/components/schemas/ToNumber"
+        from:
+          $ref: "#/components/schemas/FromId"
+        channel:
+          description: The channel to send to. You must provide `viber_service` in this field
+          type: string
+          example: viber_service
+          enum:
+            - viber_service
+        viber_service:
+          type: object
+          properties:
+            category:
+              type: string
+              description: The use of different category tags enables the business to send messages for different use cases. For Viber Business Messages the first message sent from a business to a user must be personal, informative & a targeted message - not promotional. By default Vonage sends the `transaction` category to Viber Business Messages.
+              enum:
+                - transaction
+                - promotion
+            ttl:
+              minimum: 30
+              maximum: 259200
+              description: Set the time-to-live of message to be delivered in seconds. i.e. if the message is not delivered in 600 seconds then delete the message.
+              example: 600
+              type: integer
+            type:
+              description: Viber-specific type definition. To use "template", please contact your Vonage Account Manager to setup your templates. To find out more please visit the [product page](https://www.vonage.com/communications-apis/messages/)
+              type: string
+            action:
+              description: Node for Viber action buttons.
+              type: object
+              properties:
+                url:
+                  description: A URL which is requested when the action button is clicked.
+                  type: string
+                  example: https://example.com/page1.html
+                text:
+                  description: Text which is rendered on the action button.
+                  type: string
+                  maxLength: 30
+                  example: Find out more
     channelOptionsWhatsapp:
       type: object
       properties:
@@ -1469,7 +1615,7 @@ components:
               description: The charge amount as a stringified number.
         client_ref:
           type: string
-          description: Client reference of up to 40 characters. The reference will be present in every message status.
+          description: Client reference of up to 100 characters. The reference will be present in every message status.
       required:
         - message_uuid
         - channel
@@ -1623,6 +1769,14 @@ components:
           enum:
             - viber_service
           example: viber_service
+        context:
+          type: object
+          description: Object containing contextual details for the inbound message when it is a response to another message.
+          properties:
+            message_uuid:
+              type: string
+              description: The ID of the message being replied to.
+              example: 1234567890abcdef
         message_uuid:
           $ref: "#/components/schemas/MessageUuid"
         to:
