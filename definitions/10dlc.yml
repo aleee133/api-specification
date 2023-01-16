@@ -1,7 +1,7 @@
 openapi: 3.0.3
 
 info:
-  version: 1.0.17
+  version: 1.0.18
   title: 10DLC Brand and Campaign Provisioning
   contact:
     name: Vonage
@@ -504,7 +504,7 @@ paths:
                 account_id:
                   $ref: '#/components/schemas/AccountID'
                 campaign_id:
-                  $ref: '#/components/schemas/CampaignId'
+                  $ref: '#/components/schemas/TCRCampaignID'
                 label:
                   $ref: '#/components/schemas/CampaignLabel'
               required:
@@ -1607,6 +1607,8 @@ components:
                 description: Type of vetting to perform.
                 type: string
                 example: "abcd123"
+              vetting_political_details:
+                $ref: '#/components/schemas/VettingPoliticalDetails'
             required:
               - evp_id
               - vetting_class
@@ -2305,6 +2307,12 @@ components:
       type: string
       pattern: ^[0-9A-F]{7}$
 
+    TCRCampaignID:
+      description: TCR Campaign ID.
+      type: string
+      maxLength: 50
+      example: C123ABC
+
     CampaignResponse:
       allOf:
         - $ref: "#/components/schemas/CampaignBase"
@@ -2316,10 +2324,40 @@ components:
               $ref: "#/components/schemas/AccountID"
             campaign_id:
               $ref: "#/components/schemas/CampaignId"
+            tcr_campaign_id:
+              $ref: '#/components/schemas/TCRCampaignID'
+            tcr_status:
+              $ref: '#/components/schemas/TCRCampaignStatus'
             created_date:
               type: string
             last_updated:
               type: string
+            last_status_changes:
+              type: array
+              title: The last status changes
+              description: |
+                Lists the last changes of the status field.
+
+                **Note**: this is only an extract. Not all changes are listed here.
+              items:
+                type: object
+                properties:
+                  status:
+                    $ref: '#/components/schemas/CampaignStatus'
+                  explanation:
+                    type: string
+                    title: The explanation of the change.
+                    description: |
+                      Describes why the status changed how it did.
+                  change_date:
+                    type: string
+                    format: date-time
+                    title: Date-time when the status changed.
+                    description: Date-time when the status changed.
+                example:
+                  status: APPROVED
+                  reason: Approved after internal review.
+                  change_date: '2022-01-01 01:01:01'
             _links:
               type: object
               properties:
@@ -2347,6 +2385,14 @@ components:
       type: string
       example: ACTIVE
       enum:
+        - ACTIVE
+        - EXPIRED
+
+    TCRCampaignStatus:
+      description: Campaign TCR status.
+      type: string
+      enum:
+        - UNKNOWN
         - ACTIVE
         - EXPIRED
 
@@ -2745,13 +2791,31 @@ components:
         vetting_class:
           type: string
         vetting_status:
+          description: >-
+            Identifies the vetting request status. Please refer to the /enum
+            endpoint for an updated list of valid values.
           type: string
+          readOnly: true
+          enum:
+            - PENDING
+            - UNSCORE
+            - ACTIVE
+            - FAILED
+            - EXPIRED
+        vetting_details:
+          $ref: '#/components/schemas/VettingDetails'
         vetted_date:
+          description: >-
+            Vetting effective date. This is the date when vetting was completed,
+            or the starting effective date. If this date is missing, then the
+            vetting was not complete or not valid.
           type: string
           format: date-time
         create_date:
           type: string
           format: date-time
+        additional_info:
+          $ref: '#/components/schemas/VettingAdditionalInfo'
         _links:
           type: object
           properties:
@@ -2882,7 +2946,255 @@ components:
                     - type: number
                     - type: boolean
                     - type: integer
-
+    VettingPoliticalDetails:
+      description: >-
+        Additional political details in json format, required for POLITICAL type
+        vetting. If non-POLITICAL type its neglected.
+      type: object
+      properties:
+        requestor_first_name:
+          description: First name of vetting requester.
+          type: string
+          example: John
+        requestor_last_name:
+          description: Last name of vetting requester.
+          type: string
+          example: Doe
+        locale:
+          description: Locale.
+          type: string
+          enum:
+            - Federal
+            - State
+            - Local
+            - Tribal
+          example: Federal
+        fec_committee_type_code:
+          description: Committee type codes.
+          type: string
+          enum:
+            - C
+            - D
+            - E
+            - H
+            - I
+            - 'N'
+            - O
+            - P
+            - Q
+            - S
+            - U
+            - V
+            - W
+            - X
+            - 'Y'
+            - Z
+          example: C
+        committee_id:
+          description: >-
+            Free text field. The committee/campaign ID issued for Federal and
+            any other locale - if not issued, enter "00000".
+          type: string
+          example: "00000"
+        candidate_type:
+          description: >-
+            Free text field. Required for campaigns. If committee is not
+            candidate-specific, enter "PAC".
+          type: string
+          example: "PAC"
+        state_local_committee_type:
+          description: >-
+            Free text field. Required for State, Local, and Tribal -- if
+            Federal, enter "FEDERAL".
+          type: string
+          example: "FEDERAL"
+        local_committee_state:
+          description: >-
+            If Federal Congress, enter the state(2 letter code) to be
+            represented; if President, enter "US".
+          type: string
+          example: AZ
+        local_committee_municipality:
+          description: >-
+            Free text field. If Federal Congress, enter district to be
+            represented; if President, enter "US".
+          type: string
+          example: "US"
+        tribal_location:
+          description: Free text field. If non-tribal, enter "US".
+          type: string
+          example: "US"
+        filing_url:
+          description: >-
+            Should be a valid URL format. Election authority website URL where
+            the filing information can be found.
+          type: string
+          example: "https://example.com"
+        filing_record_url_instructions:
+          description: >-
+            Free text field. Additional instructions to aid in locating the
+            filing record.
+          type: string
+          example: Additional instructions
+        filing_email:
+          description: >-
+            Free text field. Exactly as filed with election authority. If not
+            supplied, PIN cannot be sent via email.
+          type: string
+          example: john@email.com
+        election_date:
+          description: Date string in the format yyyy-dd-mm. Must be in the future.
+          type: string
+          example: '2022-31-10'
+        pin_preference:
+          description: Pin preference.
+          type: string
+          enum:
+            - Regular
+            - Express
+            - Email
+          example: Regular
+      required:
+        - requestor_first_name
+        - requestor_last_name
+        - locale
+        - fec_committee_type_code
+        - committee_id
+        - candidate_type
+        - state_local_committee_type
+        - local_committee_state
+        - local_committee_municipality
+        - tribal_location
+        - filing_url
+        - election_date
+        - pin_preference
+    VettingAdditionalInfo:
+      description: >-
+        Additional brand information in json format. Required for POLITICAL type
+        vets.
+      type: object
+      properties:
+        requestor_first_name:
+          description: First name of vetting requester.
+          type: string
+          example: John
+        requestor_last_name:
+          description: Last name of vetting requester.
+          type: string
+          example: Doe
+        locale:
+          description: Locale.
+          type: string
+          enum:
+            - Federal
+            - State
+            - Local
+            - Tribal
+          example: Federal
+        fec_committee_type_code:
+          description: Committee type codes.
+          type: string
+          enum:
+            - C
+            - D
+            - E
+            - H
+            - I
+            - 'N'
+            - O
+            - P
+            - Q
+            - S
+            - U
+            - V
+            - W
+            - X
+            - 'Y'
+            - Z
+          example: C
+        committee_id:
+          description: >-
+            Free text field. The committee/campaign ID issued for Federal and
+            any other locale - if not issued, enter "00000".
+          type: string
+          example: "00000"
+        candidate_type:
+          description: >-
+            Free text field. Required for campaigns. If committee is not
+            candidate-specific, enter "PAC".
+          type: string
+          example: "PAC"
+        state_local_committee_type:
+          description: >-
+            Free text field. Required for State, Local, and Tribal -- if
+            Federal, enter "FEDERAL".
+          type: string
+          example: "FEDERAL"
+        local_committee_state:
+          description: >-
+            If Federal Congress, enter the state(2 letter code) to be
+            represented; if President, enter "US".
+          type: string
+          example: AZ
+        local_committee_municipality:
+          description: >-
+            Free text field. If Federal Congress, enter district to be
+            represented; if President, enter "US".
+          type: string
+          example: "US"
+        tribal_location:
+          description: Free text field. If non-tribal, enter "US".
+          type: string
+          example: "US"
+        filing_url:
+          description: >-
+            Should be a valid URL format. Election authority website URL where
+            the filing information can be found.
+          type: string
+          example: "https://example.com"
+        filing_record_url_instructions:
+          description: >-
+            Free text field. Additional instructions to aid in locating the
+            filing record.
+          type: string
+          example: "Additional instructions"
+        filing_email:
+          description: >-
+            Free text field. Exactly as filed with election authority. If not
+            supplied, PIN cannot be sent via email.
+          type: string
+          example: "John@email.com"
+        election_date:
+          description: Date string in the format yyyy-dd-mm. Must be in the future.
+          type: string
+          example: '2022-31-10'
+        pin_preference:
+          description: Pin preference.
+          type: string
+          enum:
+            - Regular
+            - Express
+            - Email
+          example: Regular
+      required:
+        - requestor_first_name
+        - requestor_last_name
+        - locale
+        - fec_committee_type_code
+        - committee_id
+        - candidate_type
+        - state_local_committee_type
+        - local_committee_state
+        - local_committee_municipality
+        - tribal_location
+        - filing_url
+        - election_date
+        - pin_preference
+    VettingDetails:
+      type: object
+      description: >-
+        Collection of non-standard attributes (key-value pairs), applicable to
+        some vetting records.
   securitySchemes:
     basicAuth:
       type: http
