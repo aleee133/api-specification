@@ -1,14 +1,14 @@
 openapi: 3.0.2
 info:
   title: Vonage Verify API (v2) - Early Access
-  version: 0.0.16
+  version: 0.0.17
   description: Verify API provides a choice of routes for sending a code to a user. You can use this to confirm a user's contact information, as a second factor when authenticating users, or for step-up authentication.
   contact:
     name: Vonage DevRel
     email: devrel@vonage.ctom
     url: 'https://developer.vonage.com/'
 servers:
-  - url: https://api.vonage.com/v2/verify
+  - url: https://api.nexmo.com/v2/verify
 security:
   - basicAuth: []
   - bearerAuth: []
@@ -556,7 +556,6 @@ components:
         - submitted_at
         - status
         - type
-        - finalized_at
         - channel_timeout
         - workflow
       properties:
@@ -634,11 +633,6 @@ components:
         price:
           type: number
           description: The total cost for this request so far, in EUR. This number may update as the request progresses.
-        finalized_at:
-          type: string
-          description: >-
-            The date and time the verification request was completed. This
-            response parameter is in ISO 8601 format.
           example: "2020-01-01T14:00:00.000Z"
         client_ref:
           type: string
@@ -692,10 +686,11 @@ components:
           description: Current status of this request
           example: action_pending
           enum:
-            - action_pending
-            - failed
             - completed
+            - failed
             - user_rejected
+            - expired
+            - action_pending
         action:
           type: array
           items:
