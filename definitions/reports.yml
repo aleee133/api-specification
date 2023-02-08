@@ -1,6 +1,6 @@
 openapi: '3.0.0'
 info:
-  version: 2.2.0
+  version: 2.2.2
   title: Reports API
   description: |
     The [Reports API](/reports/overview) enables you to request a report of activity for your Vonage account.
@@ -1118,16 +1118,10 @@ components:
       description: Search only for voice call with the corresponding status.
       example: 'started'
       enum:
-        - started
-        - ringing
         - answered
         - machine
-        - completed
-        - timeout
+        - error
         - failed
-        - rejected
-        - cancelled
-        - busy
     websocket_status:
       type: string
       description: Search only for WebSocket call with corresponding status.
@@ -2357,3 +2351,6 @@ x-errors:
     link:
       text: View API reference
       url: /api/reports#cancel-report
+  rate-limit:
+    description: The request was rate limited.
+    resolution: The Reports API supports 5 requests per second. Slow down your request rate.

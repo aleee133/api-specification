@@ -1,7 +1,7 @@
 ---
 openapi: 3.0.0
 info:
-  version: 1.3.7
+  version: 1.3.10
   title: Voice API
   description:
     The Voice API lets you create outbound calls, control in-progress calls
@@ -335,6 +335,10 @@ components:
           description: The volume level that the speech is played. This can be any value between `-1` to `1` in `0.1` increments, with `0` being the default.
           example: "0.4"
           default: "0"
+        premium:
+          type: boolean
+          description: Set to true to use the premium version of the specified style if available, otherwise the standard version will be used. The default value is false. You can find more information about Premium Voices in the [Text-To-Speech guide](/voice/voice-api/guides/text-to-speech#premium-voices).
+          default: false
 
     StartStreamRequest:
       type: object
@@ -518,6 +522,7 @@ components:
       type: object
       required:
         - to
+        - from
       properties:
         to:
           type: array
@@ -722,7 +727,7 @@ components:
       description: >-
         The Mobile Country Code Mobile Network Code
         ([MCCMNC](https://en.wikipedia.org/wiki/Mobile_country_code)) for
-        the carrier network used to make this call.
+        the carrier network used to make this call. This is only sent if `status` is `completed`.
       type: string
       title: "The Network ID of the destination "
       example: "65512"
@@ -802,7 +807,7 @@ components:
     status:
       type: string
       title: The State of the call
-      example: started
+      example: completed
       description: The status of the call. [See possible values](https://developer.nexmo.com/voice/voice-api/guides/call-flow#event-objects)
 
     EndpointApp:

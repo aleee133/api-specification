@@ -1,6 +1,6 @@
 openapi: "3.0.0"
 info:
-  version: 1.0.11
+  version: 1.2.0
   title: SMS API
   description: With the SMS API you can send SMS from your account and lookup messages both messages that you've sent as well as messages sent to your virtual numbers. Numbers are specified in E.164 format. More SMS API documentation is at <https://developer.nexmo.com/messaging/sms/overview>
   contact:
@@ -155,20 +155,9 @@ components:
           enum:
             - text
             - binary
-            - wappush
             - unicode
-            - vcal
-            - vcard
           example: text
           default: text
-        vcard:
-          description: "**Advanced**: A business card in [vCard format](https://en.wikipedia.org/wiki/VCard). Depends on `type` parameter having the value `vcard`."
-          type: string
-          format: vcard
-        vcal:
-          description: "**Advanced**: A calendar event in [vCal format](https://en.wikipedia.org/wiki/VCal). Depends on `type` parameter having the value `vcal`."
-          type: string
-          format: vcal
         body:
           description: "**Advanced**: Hex encoded binary data. Depends on `type` parameter having the value `binary`."
           type: string
@@ -181,18 +170,6 @@ components:
           description: "**Advanced**: The value of the [protocol identifier](https://en.wikipedia.org/wiki/GSM_03.40#Protocol_Identifier) to use. Ensure that the value is aligned with `udh`."
           type: integer
           example: 127
-        title:
-          description: "**Advanced**: The title for a wappush SMS. Depends on `type` parameter having the value `wappush`."
-          type: string
-          example: Welcome
-        url:
-          description: "**Advanced**: The URL of your website. Depends on `type` parameter having the value `wappush`."
-          type: string
-          example: https://example.com
-        validity:
-          description: "**Advanced**: The availability for an SMS in milliseconds. Depends on `type` parameter having the value `wappush`."
-          type: string
-          example: "300000"
         client-ref:
           description: "**Advanced**: You can optionally include your own reference of up to 100 characters."
           type: string
